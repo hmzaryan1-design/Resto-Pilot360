@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RestoPilot 360 — Dashboard Propriétaire</title>
+  <style>
+    :root{
+      --ink:#17231d;
+      --muted:#66746c;
+      --bg:#F7F3EA;
+      --panel:#FFFCF6;
+      --line:#E6DED1;
+      --green:#0F4F3A;
+      --green2:#123C2E;
+      --sage:#DCE9DF;
+      --gold:#B8873B;
+      --terracotta:#B35B3D;
+      --red:#A93C36;
+      --orange:#D98C38;
+      --blue:#2F5D73;
+      --ok:#1F7A55;
+      --shadow:0 18px 60px rgba(23,35,29,.10);
+      --radius:22px;
+      --radius-sm:14px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      --arfont: Tahoma, Arial, sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);min-height:100vh;}
+    body[dir="rtl"]{font-family:var(--arfont);}
+    .grain{position:fixed;inset:0;pointer-events:none;opacity:.045;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");}
+    .app{max-width:1440px;margin:auto;padding:28px;}
+    .topbar{display:flex;gap:18px;align-items:center;justify-content:space-between;margin-bottom:24px;}
+    .brand{display:flex;gap:14px;align-items:center;}
+    .logo{width:54px;height:54px;border-radius:18px;background:linear-gradient(135deg,var(--green),#08271D);display:grid;place-items:center;box-shadow:0 12px 26px rgba(15,79,58,.25);position:relative;overflow:hidden;}
+    .logo:before{content:"";position:absolute;width:42px;height:42px;border:2px solid rgba(255,255,255,.26);border-radius:50%;}
+    .logo:after{content:"R";font-weight:900;font-size:26px;color:#F7E6B2;letter-spacing:-2px;z-index:1;}
+    .brand h1{font-size:24px;line-height:1;margin:0;letter-spacing:-.04em;}
+    .brand p{margin:6px 0 0;color:var(--muted);font-size:13px;}
+    .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+    .pillbtn,.refresh{border:1px solid var(--line);background:rgba(255,252,246,.8);color:var(--ink);border-radius:999px;padding:10px 14px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(23,35,29,.05);}
+    .pillbtn.active{background:var(--green);color:#fff;border-color:var(--green)}
+    .refresh{background:#fff}
+    .statusdot{width:10px;height:10px;border-radius:999px;background:var(--orange);display:inline-block;margin-inline-end:8px;box-shadow:0 0 0 4px rgba(217,140,56,.14)}
+    .statusdot.ok{background:var(--ok);box-shadow:0 0 0 4px rgba(31,122,85,.14)}
+    .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:22px;margin-bottom:22px;}
+    .hero-card{background:linear-gradient(135deg,#123C2E,#0A2119);color:#fff;border-radius:30px;padding:28px;box-shadow:var(--shadow);position:relative;overflow:hidden;min-height:260px;}
+    .hero-card:before{content:"";position:absolute;right:-80px;top:-120px;width:310px;height:310px;border:1px solid rgba(247,230,178,.18);border-radius:50%;}
+    body[dir="rtl"] .hero-card:before{right:auto;left:-80px;}
+    .hero-card:after{content:"";position:absolute;right:34px;bottom:24px;width:170px;height:170px;background:radial-gradient(circle,rgba(184,135,59,.33),rgba(184,135,59,0) 65%);}
+    body[dir="rtl"] .hero-card:after{right:auto;left:34px;}
+    .eyebrow{color:#F3DFA6;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px;}
+    body[dir="rtl"] .eyebrow{letter-spacing:0;text-transform:none;}
+    .hero h2{font-size:42px;line-height:1.02;letter-spacing:-.06em;margin:0 0 14px;max-width:760px;position:relative;z-index:1;}
+    body[dir="rtl"] .hero h2{letter-spacing:-.015em;}
+    .hero p{color:#D9E8DE;margin:0;line-height:1.7;max-width:780px;position:relative;z-index:1;}
+    .score-card{background:var(--panel);border:1px solid var(--line);border-radius:30px;padding:24px;box-shadow:var(--shadow);min-height:260px;display:flex;flex-direction:column;justify-content:space-between;}
+    .score-row{display:flex;align-items:center;justify-content:space-between;gap:18px;}
+    .score-num{font-size:64px;font-weight:900;letter-spacing:-.08em;color:var(--green);line-height:1;}
+    .score-label{color:var(--muted);font-weight:700;margin-top:6px;}
+    .ring{width:118px;height:118px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--green) calc(var(--score,0)*1%),#E8E0D3 0);position:relative;}
+    .ring:before{content:"";position:absolute;inset:11px;background:var(--panel);border-radius:50%;}
+    .ring span{position:relative;font-weight:900;color:var(--green)}
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px;}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:0 10px 34px rgba(23,35,29,.07);}
+    .kpi-title{font-size:13px;color:var(--muted);font-weight:800;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+    .kpi-value{font-size:28px;font-weight:900;letter-spacing:-.04em;white-space:nowrap;}
+    .kpi-note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.45;}
+    .mini-icon{width:32px;height:32px;border-radius:12px;background:var(--sage);display:grid;place-items:center;color:var(--green);font-weight:900;}
+    .grid-2{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;margin-bottom:18px;}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px;}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 34px rgba(23,35,29,.07);overflow:hidden;}
+    .panel-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+    .panel-title{margin:0;font-size:17px;letter-spacing:-.02em;}
+    .panel-sub{font-size:12px;color:var(--muted);margin-top:5px;}
+    .panel-body{padding:18px 20px;}
+    .brief{white-space:pre-line;line-height:1.75;color:#33423B;font-size:15px;}
+    body[dir="rtl"] .brief{font-size:16px;line-height:1.9;}
+    .actions{display:grid;gap:10px;}
+    .action-item{display:grid;grid-template-columns:86px 1fr auto;gap:12px;align-items:start;padding:13px;border:1px solid var(--line);border-radius:16px;background:#fffdf9;}
+    body[dir="rtl"] .action-item{grid-template-columns:86px 1fr auto;}
+    .tag{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:900;white-space:nowrap;}
+    .tag.ok{background:#D1FAE5;color:#065F46}.tag.warn{background:#FFF4D6;color:#92400E}.tag.danger{background:#FEE2E2;color:#991B1B}.tag.info{background:#DDECF4;color:#2F5D73}.tag.dark{background:#E8E0D3;color:#443A2D}
+    .action-title{font-weight:900;margin-bottom:4px}.action-why{color:var(--muted);font-size:13px;line-height:1.45}
+    table{width:100%;border-collapse:collapse;font-size:13px;}
+    th{text-align:start;color:var(--muted);font-size:12px;font-weight:900;padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap;}
+    td{padding:12px 8px;border-bottom:1px solid rgba(230,222,209,.8);vertical-align:middle;}
+    tr:last-child td{border-bottom:0}
+    .num{text-align:end;font-variant-numeric:tabular-nums;white-space:nowrap;}
+    .muted{color:var(--muted)}
+    .barlist{display:grid;gap:12px;}
+    .barrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;}
+    .barname{font-weight:800;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .barval{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+    .bar{grid-column:1/-1;height:9px;background:#ECE4D8;border-radius:999px;overflow:hidden;}
+    .bar span{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--gold));border-radius:999px;width:var(--w,0%);}
+    .split{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+    .split .mini{border:1px solid var(--line);border-radius:16px;padding:12px;background:#fffdf9;}
+    .mini strong{display:block;font-size:18px;margin-top:6px;}.mini span{font-size:12px;color:var(--muted);font-weight:800}
+    .footer{margin:24px 0 8px;text-align:center;color:var(--muted);font-size:12px;}
+    .errorbox{background:#FEE2E2;color:#7F1D1D;border:1px solid #FECACA;border-radius:18px;padding:16px;display:none;margin-bottom:18px;}
+    .skeleton{animation:pulse 1.4s ease-in-out infinite;background:linear-gradient(90deg,#eee6da,#f8f2e9,#eee6da);background-size:200% 100%;border-radius:12px;color:transparent!important}
+    @keyframes pulse{0%{background-position:0 0}100%{background-position:-200% 0}}
+    @media(max-width:1180px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.hero,.grid-2,.grid-3{grid-template-columns:1fr}.hero h2{font-size:34px}}
+    @media(max-width:720px){.app{padding:16px}.topbar{align-items:flex-start;flex-direction:column}.toolbar{justify-content:flex-start}.kpi-grid{grid-template-columns:1fr}.score-row{align-items:flex-start}.score-num{font-size:48px}.ring{width:92px;height:92px}.hero-card,.score-card{border-radius:24px;padding:20px}.hero h2{font-size:30px}.action-item{grid-template-columns:1fr}.split{grid-template-columns:1fr}table{font-size:12px}.table-scroll{overflow:auto}.brand h1{font-size:21px}}
+  </style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo" aria-label="RestoPilot 360"></div>
+      <div>
+        <h1>RestoPilot 360</h1>
+        <p data-i18n="subtitle">Pilotage restaurant · stock · ventes · dépenses · commandes</p>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="pillbtn active" id="frBtn">Français</button>
+      <button class="pillbtn" id="arBtn">العربية</button>
+      <button class="refresh" id="refreshBtn"><span class="statusdot" id="dot"></span><span data-i18n="refresh">Actualiser</span></button>
+    </div>
+  </div>
+
+  <div class="errorbox" id="errorBox"></div>
+
+  <section class="hero">
+    <div class="hero-card">
+      <div class="eyebrow" data-i18n="ownerView">Vue propriétaire</div>
+      <h2 data-i18n="heroTitle">Un cockpit simple pour piloter le restaurant sans se perdre dans les feuilles.</h2>
+      <p data-i18n="heroText">Le dashboard transforme les ventes, achats, stock, inventaire, dépenses et bons de commande en décisions claires : quoi contrôler, quoi commander, quoi corriger.</p>
+    </div>
+    <div class="score-card">
+      <div class="score-row">
+        <div>
+          <div class="eyebrow" style="color:var(--gold)" data-i18n="controlScore">Score de contrôle</div>
+          <div class="score-num" id="scoreNum">--</div>
+          <div class="score-label" id="scoreLabel">--</div>
+        </div>
+        <div class="ring" id="scoreRing" style="--score:0"><span id="scoreRingText">0%</span></div>
+      </div>
+      <p class="kpi-note" id="scoreAdvice">Chargement de l’analyse...</p>
+    </div>
+  </section>
+
+  <section class="kpi-grid">
+    <div class="card"><div class="kpi-title"><span data-i18n="caMonth">CA du mois</span><span class="mini-icon">د</span></div><div class="kpi-value" id="kpiCA">--</div><div class="kpi-note" id="noteCA">--</div></div>
+    <div class="card"><div class="kpi-title"><span data-i18n="caEstimate">Estimation fin de mois</span><span class="mini-icon">↗</span></div><div class="kpi-value" id="kpiEstimate">--</div><div class="kpi-note" id="noteEstimate">--</div></div>
+    <div class="card"><div class="kpi-title"><span data-i18n="result">Résultat estimé</span><span class="mini-icon">Σ</span></div><div class="kpi-value" id="kpiResult">--</div><div class="kpi-note" id="noteResult">--</div></div>
+    <div class="card"><div class="kpi-title"><span data-i18n="stockValue">Valeur stock</span><span class="mini-icon">◆</span></div><div class="kpi-value" id="kpiStockValue">--</div><div class="kpi-note" id="noteStockValue">--</div></div>
+    <div class="card"><div class="kpi-title"><span data-i18n="foodCost">Food cost</span><span class="mini-icon">%</span></div><div class="kpi-value" id="kpiFoodCost">--</div><div class="kpi-note" id="noteFoodCost">--</div></div>
+    <div class="card"><div class="kpi-title"><span data-i18n="stockAlerts">Alertes stock</span><span class="mini-icon">!</span></div><div class="kpi-value" id="kpiStockAlerts">--</div><div class="kpi-note" data-i18n="stockAlertsNote">Rupture, sous seuil ou couverture critique.</div></div>
+    <div class="card"><div class="kpi-title"><span data-i18n="ordersOpen">Bons ouverts</span><span class="mini-icon">BC</span></div><div class="kpi-value" id="kpiOrders">--</div><div class="kpi-note" data-i18n="ordersNote">À valider, envoyés ou non reçus.</div></div>
+    <div class="card"><div class="kpi-title"><span data-i18n="unpaidInvoices">Factures non payées</span><span class="mini-icon">ₘ</span></div><div class="kpi-value" id="kpiInvoices">--</div><div class="kpi-note" data-i18n="invoicesNote">À suivre avant paiement fournisseur.</div></div>
+  </section>
+
+  <section class="grid-2">
+    <div class="panel">
+      <div class="panel-head"><div><h3 class="panel-title" data-i18n="naturalAnalysis">Analyse naturelle</h3><div class="panel-sub" data-i18n="naturalSub">Lecture simple pour le propriétaire</div></div><span class="tag info" id="lastUpdate">--</span></div>
+      <div class="panel-body"><div class="brief" id="briefText">Chargement...</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div><h3 class="panel-title" data-i18n="priorityActions">Actions prioritaires</h3><div class="panel-sub" data-i18n="actionsSub">Ce qu’il faut faire maintenant</div></div></div>
+      <div class="panel-body"><div class="actions" id="actionsList"></div></div>
+    </div>
+  </section>
+
+  <section class="grid-3">
+    <div class="panel">
+      <div class="panel-head"><div><h3 class="panel-title" data-i18n="paymentSplit">Répartition ventes</h3><div class="panel-sub" data-i18n="paymentSub">Espèces, carte, livraison</div></div></div>
+      <div class="panel-body"><div class="split" id="paymentSplit"></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div><h3 class="panel-title" data-i18n="expensesByType">Dépenses par type</h3><div class="panel-sub" data-i18n="expensesSub">Mois en cours</div></div></div>
+      <div class="panel-body"><div class="barlist" id="expensesBars"></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div><h3 class="panel-title" data-i18n="supplierRisk">Fournisseurs / factures</h3><div class="panel-sub" data-i18n="supplierSub">Montants à surveiller</div></div></div>
+      <div class="panel-body"><div class="barlist" id="supplierBars"></div></div>
+    </div>
+  </section>
+
+  <section class="grid-2">
+    <div class="panel">
+      <div class="panel-head"><div><h3 class="panel-title" data-i18n="stockControl">Contrôle stock</h3><div class="panel-sub" data-i18n="stockControlSub">Produits en rupture, sous seuil ou à commander</div></div><span class="tag danger" id="stockCount">0</span></div>
+      <div class="panel-body table-scroll"><table><thead><tr><th data-i18n="product">Produit</th><th data-i18n="status">Statut</th><th class="num" data-i18n="stock">Stock</th><th class="num" data-i18n="coverage">Couverture</th><th data-i18n="action">Action</th></tr></thead><tbody id="stockTable"></tbody></table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div><h3 class="panel-title" data-i18n="purchaseOrders">Bons de commande</h3><div class="panel-sub" data-i18n="purchaseOrdersSub">Commandes à valider ou à suivre</div></div><span class="tag warn" id="orderCount">0</span></div>
+      <div class="panel-body table-scroll"><table><thead><tr><th>ID</th><th data-i18n="supplier">Fournisseur</th><th data-i18n="priority">Priorité</th><th class="num" data-i18n="amount">Montant</th><th data-i18n="status">Statut</th></tr></thead><tbody id="ordersTable"></tbody></table></div>
+    </div>
+  </section>
+
+  <section class="grid-2">
+    <div class="panel">
+      <div class="panel-head"><div><h3 class="panel-title" data-i18n="salesTrend">Tendance ventes</h3><div class="panel-sub" data-i18n="salesTrendSub">Derniers jours saisis</div></div></div>
+      <div class="panel-body"><div class="barlist" id="salesBars"></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div><h3 class="panel-title" data-i18n="unpaidList">Factures à suivre</h3><div class="panel-sub" data-i18n="unpaidListSub">Non payées ou statut incomplet</div></div></div>
+      <div class="panel-body table-scroll"><table><thead><tr><th data-i18n="date">Date</th><th data-i18n="supplier">Fournisseur</th><th>Facture</th><th class="num" data-i18n="amount">Montant</th><th data-i18n="status">Statut</th></tr></thead><tbody id="invoiceTable"></tbody></table></div>
+    </div>
+  </section>
+
+  <div class="footer">RestoPilot 360 · Dashboard propriétaire · Google Sheets + Apps Script + Vercel</div>
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbzITV2MPFWytiNV8K_ZhDXy7vmbiT-xJuViWzH-qpUxJVqyv9ydn4wPS5i8cRPejweK/exec?token=restopilot360_hamza_2026&action=full";
+let LANG = localStorage.getItem('rp360_lang') || 'fr';
+let DATA = null;
+
+const I18N = {
+  fr:{subtitle:'Pilotage restaurant · stock · ventes · dépenses · commandes',refresh:'Actualiser',ownerView:'Vue propriétaire',heroTitle:'Un cockpit simple pour piloter le restaurant sans se perdre dans les feuilles.',heroText:'Le dashboard transforme les ventes, achats, stock, inventaire, dépenses et bons de commande en décisions claires : quoi contrôler, quoi commander, quoi corriger.',controlScore:'Score de contrôle',caMonth:'CA du mois',caEstimate:'Estimation fin de mois',result:'Résultat estimé',stockValue:'Valeur stock',foodCost:'Food cost',stockAlerts:'Alertes stock',stockAlertsNote:'Rupture, sous seuil ou couverture critique.',ordersOpen:'Bons ouverts',ordersNote:'À valider, envoyés ou non reçus.',unpaidInvoices:'Factures non payées',invoicesNote:'À suivre avant paiement fournisseur.',naturalAnalysis:'Analyse naturelle',naturalSub:'Lecture simple pour le propriétaire',priorityActions:'Actions prioritaires',actionsSub:'Ce qu’il faut faire maintenant',paymentSplit:'Répartition ventes',paymentSub:'Espèces, carte, livraison',expensesByType:'Dépenses par type',expensesSub:'Mois en cours',supplierRisk:'Fournisseurs / factures',supplierSub:'Montants à surveiller',stockControl:'Contrôle stock',stockControlSub:'Produits en rupture, sous seuil ou à commander',product:'Produit',status:'Statut',stock:'Stock',coverage:'Couverture',action:'Action',purchaseOrders:'Bons de commande',purchaseOrdersSub:'Commandes à valider ou à suivre',supplier:'Fournisseur',priority:'Priorité',amount:'Montant',salesTrend:'Tendance ventes',salesTrendSub:'Derniers jours saisis',unpaidList:'Factures à suivre',unpaidListSub:'Non payées ou statut incomplet',date:'Date',good:'Situation maîtrisée',watch:'À surveiller',critical:'Action urgente',empty:'Aucune donnée à afficher',loading:'Chargement...',days:'j',cash:'Espèces',card:'Carte',delivery:'Livraison',other:'Autre'},
+  ar:{subtitle:'لوحة قيادة المطعم · المخزون · المبيعات · المصاريف · الطلبات',refresh:'تحديث',ownerView:'واجهة المالك',heroTitle:'لوحة قيادة بسيطة لمراقبة المطعم بدون الدخول في تفاصيل الجداول.',heroText:'تحوّل اللوحة المبيعات والمشتريات والمخزون والجرد والمصاريف وطلبات الشراء إلى قرارات واضحة: ماذا تراقب، ماذا تطلب، وماذا تصحح.',controlScore:'نقطة التحكم',caMonth:'رقم المعاملات',caEstimate:'تقدير نهاية الشهر',result:'النتيجة التقديرية',stockValue:'قيمة المخزون',foodCost:'تكلفة المواد',stockAlerts:'إنذارات المخزون',stockAlertsNote:'نفاد، تحت الحد الأدنى أو تغطية حرجة.',ordersOpen:'طلبات مفتوحة',ordersNote:'في انتظار الموافقة أو الإرسال أو الاستلام.',unpaidInvoices:'فواتير غير مؤداة',invoicesNote:'يجب تتبعها قبل الأداء للمورد.',naturalAnalysis:'تحليل مبسط',naturalSub:'قراءة سهلة للمالك',priorityActions:'الإجراءات الأولوية',actionsSub:'ما يجب فعله الآن',paymentSplit:'توزيع المبيعات',paymentSub:'نقدا، بطاقة، توصيل',expensesByType:'المصاريف حسب النوع',expensesSub:'الشهر الحالي',supplierRisk:'الموردون / الفواتير',supplierSub:'مبالغ يجب مراقبتها',stockControl:'مراقبة المخزون',stockControlSub:'منتجات نافدة أو تحت الحد أو تحتاج طلب شراء',product:'المنتج',status:'الحالة',stock:'المخزون',coverage:'التغطية',action:'الإجراء',purchaseOrders:'طلبات الشراء',purchaseOrdersSub:'طلبات تحتاج موافقة أو متابعة',supplier:'المورد',priority:'الأولوية',amount:'المبلغ',salesTrend:'تطور المبيعات',salesTrendSub:'آخر الأيام المدخلة',unpaidList:'فواتير للمتابعة',unpaidListSub:'غير مؤداة أو الحالة غير مكتملة',date:'التاريخ',good:'الوضع تحت السيطرة',watch:'يحتاج مراقبة',critical:'إجراء عاجل',empty:'لا توجد بيانات للعرض',loading:'جاري التحميل...',days:'يوم',cash:'نقدا',card:'بطاقة',delivery:'توصيل',other:'أخرى'}
+};
+
+function t(k){return I18N[LANG][k] || I18N.fr[k] || k}
+function applyLang(){
+  document.documentElement.lang = LANG;
+  document.body.dir = LANG === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));
+  document.getElementById('frBtn').classList.toggle('active', LANG==='fr');
+  document.getElementById('arBtn').classList.toggle('active', LANG==='ar');
+  localStorage.setItem('rp360_lang', LANG);
+  if(DATA) render(DATA);
+}
+
+document.getElementById('frBtn').onclick=()=>{LANG='fr';applyLang()};
+document.getElementById('arBtn').onclick=()=>{LANG='ar';applyLang()};
+document.getElementById('refreshBtn').onclick=load;
+
+function val(obj,key){
+  const item = obj && obj[key];
+  if(item && typeof item === 'object' && 'value' in item) return item.value;
+  return item ?? 0;
+}
+function lecture(obj,key){const item=obj&&obj[key];return item&&item.lecture?item.lecture:''}
+function num(v){ if(v===null||v===undefined||v==='') return 0; if(typeof v==='number') return v; const n=parseFloat(String(v).replace(/\s/g,'').replace(',','.').replace(/[^0-9.\-]/g,'')); return isNaN(n)?0:n; }
+function money(v){return new Intl.NumberFormat(LANG==='ar'?'ar-MA':'fr-MA',{maximumFractionDigits:0}).format(num(v))+' MAD'}
+function pct(v){let n=num(v); if(n<=1) n*=100; return new Intl.NumberFormat(LANG==='ar'?'ar-MA':'fr-MA',{maximumFractionDigits:1}).format(n)+'%'}
+function one(v){return new Intl.NumberFormat(LANG==='ar'?'ar-MA':'fr-MA',{maximumFractionDigits:1}).format(num(v))}
+function dateFmt(v){ if(!v)return ''; const d=new Date(v); return isNaN(d)?String(v):d.toLocaleDateString(LANG==='ar'?'ar-MA':'fr-FR'); }
+function todayMonth(){const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+function monthOf(v){const d=new Date(v); return isNaN(d)?'':d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+function chip(status){
+  const s=String(status||'').toLowerCase(); let c='dark';
+  if(['ok','rentable','reçu','payé'].some(x=>s.includes(x))) c='ok';
+  if(['critique','sous','à valider','valide','envoyé','partiel','moyenne','haute'].some(x=>s.includes(x))) c='warn';
+  if(['rupture','urgent','manquant','non payé','corriger'].some(x=>s.includes(x))) c='danger';
+  return `<span class="tag ${c}">${status||'-'}</span>`;
+}
+function getSummary(d,key){return val(d.summary,key)}
+function top(arr,n=8){return (arr||[]).slice(0,n)}
+function groupSum(rows,key,valKey){const m={};(rows||[]).forEach(r=>{const k=r[key]||'Non classé';m[k]=(m[k]||0)+num(r[valKey])});return Object.entries(m).map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value)}
+function fillEmpty(id, colspan=5){document.getElementById(id).innerHTML=`<tr><td colspan="${colspan}" class="muted">${t('empty')}</td></tr>`}
+
+async function load(){
+  document.getElementById('dot').className='statusdot';
+  hideError();
+  try{
+    const res = await fetch(API_URL + '&_=' + Date.now(), {cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    if(!data.success) throw new Error(data.error || 'API error');
+    DATA=data;
+    document.getElementById('dot').className='statusdot ok';
+    render(data);
+  }catch(e){showError(e.message)}
+}
+function showError(msg){const el=document.getElementById('errorBox');el.style.display='block';el.textContent='Erreur dashboard : '+msg+' — Vérifie API_URL, token et déploiement Apps Script.';}
+function hideError(){document.getElementById('errorBox').style.display='none'}
+
+function render(d){
+  const s=d.summary||{};
+  const ca=getSummary(d,'Chiffre d’affaires mois');
+  const caEst=getSummary(d,'Estimation CA fin de mois');
+  const result=getSummary(d,'Résultat opérationnel estimé');
+  const stockVal=getSummary(d,'Valeur stock théorique');
+  const food=getSummary(d,'Food cost');
+  const alerts=getSummary(d,'Alertes stock');
+  const orders=getSummary(d,'Bons de commande ouverts');
+  const invoices=getSummary(d,'Factures non payées');
+  const score=num(getSummary(d,'Score contrôle'));
+  document.getElementById('kpiCA').textContent=money(ca); document.getElementById('noteCA').textContent=lecture(s,'Chiffre d’affaires mois') || 'Total des ventes du mois.';
+  document.getElementById('kpiEstimate').textContent=money(caEst); document.getElementById('noteEstimate').textContent=lecture(s,'Estimation CA fin de mois') || 'Projection au rythme actuel.';
+  document.getElementById('kpiResult').textContent=money(result); document.getElementById('noteResult').textContent=lecture(s,'Résultat opérationnel estimé') || (num(result)>=0?t('good'):t('critical'));
+  document.getElementById('kpiStockValue').textContent=money(stockVal); document.getElementById('noteStockValue').textContent=lecture(s,'Valeur stock théorique') || 'Valeur estimée du stock disponible.';
+  document.getElementById('kpiFoodCost').textContent=pct(food); document.getElementById('noteFoodCost').textContent=lecture(s,'Food cost') || (num(food)>0.35?t('watch'):t('good'));
+  document.getElementById('kpiStockAlerts').textContent=alerts||0; document.getElementById('kpiOrders').textContent=orders||0; document.getElementById('kpiInvoices').textContent=invoices||0;
+  document.getElementById('scoreNum').textContent=score||0;
+  document.getElementById('scoreRing').style.setProperty('--score', Math.max(0,Math.min(100,score)));
+  document.getElementById('scoreRingText').textContent=(score||0)+'%';
+  document.getElementById('scoreLabel').textContent=score>=80?t('good'):(score>=60?t('watch'):t('critical'));
+  document.getElementById('scoreAdvice').textContent=lecture(s,'Score contrôle') || (score>=80?'Le restaurant est globalement sous contrôle.':'Des actions doivent être suivies aujourd’hui.');
+  document.getElementById('lastUpdate').textContent=new Date(d.generatedAt||Date.now()).toLocaleString(LANG==='ar'?'ar-MA':'fr-FR');
+  renderBrief(d); renderActions(d); renderPayments(d); renderExpenses(d); renderSuppliers(d); renderStock(d); renderOrders(d); renderSales(d); renderInvoices(d);
+}
+function renderBrief(d){
+  const rows=d.analyses||[]; const desired=LANG==='ar'?'AR':'FR';
+  const found=rows.find(r=>String(r.Langue||'').toUpperCase()===desired) || rows[0];
+  document.getElementById('briefText').textContent=(found&&found.Analyse)||t('empty');
+}
+function renderActions(d){
+  const box=document.getElementById('actionsList'); const rows=top(d.actions||[],6);
+  if(!rows.length){box.innerHTML=`<div class="muted">${t('empty')}</div>`;return}
+  box.innerHTML=rows.map(r=>`<div class="action-item"><div>${chip(r.Priorite)}</div><div><div class="action-title">${r.Action||'-'}</div><div class="action-why">${r.Pourquoi||''}</div></div><div>${chip(r.Statut)}</div></div>`).join('');
+}
+function renderPayments(d){
+  const rows=(d.ventes||[]).filter(r=>(r.Mois||monthOf(r.Date))===todayMonth());
+  const cash=rows.reduce((a,r)=>a+num(r.CA_Especes),0), card=rows.reduce((a,r)=>a+num(r.CA_Carte),0), del=rows.reduce((a,r)=>a+num(r.CA_Livraison),0), other=rows.reduce((a,r)=>a+num(r.CA_Autre),0);
+  const total=cash+card+del+other;
+  const items=[[t('cash'),cash],[t('card'),card],[t('delivery'),del]];
+  document.getElementById('paymentSplit').innerHTML=items.map(([label,v])=>`<div class="mini"><span>${label}</span><strong>${money(v)}</strong><small class="muted">${total?pct(v/total):'0%'}</small></div>`).join('');
+}
+function renderExpenses(d){
+  const rows=(d.depenses||[]).filter(r=>(r.Mois||monthOf(r.Date))===todayMonth());
+  const groups=top(groupSum(rows,'Type_Depense','Montant_TTC'),7); renderBars('expensesBars',groups);
+}
+function renderSuppliers(d){
+  const rows=d.factures||[]; const groups=top(groupSum(rows,'Fournisseur','Montant_TTC'),7); renderBars('supplierBars',groups);
+}
+function renderBars(id,groups){
+  const el=document.getElementById(id); if(!groups.length){el.innerHTML=`<div class="muted">${t('empty')}</div>`;return}
+  const max=Math.max(...groups.map(g=>num(g.value)),1);
+  el.innerHTML=groups.map(g=>`<div class="barrow"><div class="barname">${g.label}</div><div class="barval">${money(g.value)}</div><div class="bar"><span style="--w:${Math.max(3,(num(g.value)/max)*100)}%"></span></div></div>`).join('');
+}
+function renderStock(d){
+  const rows=(d.stock||[]).filter(r=>r.Statut_Stock && r.Statut_Stock!=='OK').sort((a,b)=>num(a.Couverture_Jours)-num(b.Couverture_Jours));
+  document.getElementById('stockCount').textContent=rows.length;
+  if(!rows.length){fillEmpty('stockTable');return}
+  document.getElementById('stockTable').innerHTML=top(rows,12).map(r=>`<tr><td><strong>${r.Produit||'-'}</strong><div class="muted">${r.Categorie||''}</div></td><td>${chip(r.Statut_Stock)}</td><td class="num">${one(r.Stock_Theorique)} ${r.Unite||''}</td><td class="num">${one(r.Couverture_Jours)} ${t('days')}</td><td>${r.Action_Recommandee||'-'}</td></tr>`).join('');
+}
+function renderOrders(d){
+  const open=['Brouillon','À valider','Validé','Envoyé fournisseur','Reçu partiellement'];
+  const rows=(d.bonsCommande||[]).filter(r=>open.includes(r.Statut_Commande));
+  document.getElementById('orderCount').textContent=rows.length;
+  if(!rows.length){fillEmpty('ordersTable');return}
+  document.getElementById('ordersTable').innerHTML=top(rows,10).map(r=>`<tr><td><strong>${r.ID_Commande||'-'}</strong><div class="muted">${dateFmt(r.Date_Commande)}</div></td><td>${r.Fournisseur||'-'}</td><td>${chip(r.Priorite)}</td><td class="num">${money(r.Montant_Estime_TTC||r.Montant_Estime_HT)}</td><td>${chip(r.Statut_Commande)}</td></tr>`).join('');
+}
+function renderSales(d){
+  const rows=(d.ventes||[]).filter(r=>r.Date).sort((a,b)=>new Date(a.Date)-new Date(b.Date)).slice(-10).map(r=>({label:dateFmt(r.Date),value:num(r.CA_Total)}));
+  renderBars('salesBars',rows);
+}
+function renderInvoices(d){
+  const rows=(d.factures||[]).filter(r=>String(r.Statut_Paiement||'').toLowerCase()!=='payé');
+  if(!rows.length){fillEmpty('invoiceTable');return}
+  document.getElementById('invoiceTable').innerHTML=top(rows,10).map(r=>`<tr><td>${dateFmt(r.Date)}</td><td>${r.Fournisseur||'-'}</td><td>${r.Numero_Facture||'-'}</td><td class="num">${money(r.Montant_TTC)}</td><td>${chip(r.Statut_Paiement||'Non payé')}</td></tr>`).join('');
+}
+
+applyLang(); load();
+</script>
+</body>
+</html>
